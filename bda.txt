@@ -1,0 +1,554 @@
+﻿PYSPARK
+Input file - words.txt
+Hi
+My
+name
+is
+Mohit.
+How
+are
+you
+all?
+Hi again
+Colorado USA
+Indiana USA
+
+
+Input file - words1.txt
+Illinois USA
+Goa USA
+Colorado USA
+Indiana USA
+
+
+2.Sorting:
+from pyspark import SparkConf,SparkContext
+sc
+#Read text file and split it into lines using flatMap
+rdd1=sc.textFile("file:/home/training/Desktop/pysparks/words.txt").flatMap(lambda line:line.split())
+#Initial mapping (word, 1) and then combining same word (i.e. updating it's count)
+rdd2=rdd1.map(lambda word:(word,1)).reduceByKey(lambda v1,v2:(v1+v2))
+#sort alphabetically
+print rdd2.sortBy(lambda a:a[0]).collect()
+#sort by its occurence
+print rdd2.sortBy(lambda a:a[1]).collect()
+
+
+OUTPUT:
+Sort alphabetically
+Note - First capital letters then small letters are alphabetically sorted
+[(u'Hi', 2), 
+(u'How', 1), 
+(u'Mohit.', 1), 
+(u'My', 1), 
+(u'again', 1), 
+(u'all?', 1), 
+(u'are', 1), 
+(u'is', 1), 
+(u'name', 1), 
+(u'you', 1)]
+
+
+Sort by occurence of words
+[(u'again', 1), 
+(u'name', 1), 
+(u'is', 1),
+(u'How', 1), 
+(u'Mohit.', 1), 
+(u'all?', 1), 
+(u'you', 1), 
+(u'My', 1),
+(u'are', 1), 
+(u'Hi', 2)]
+
+
+4.Count of words starting with ‘H’:
+from pyspark import SparkConf,SparkContext
+sc
+
+
+#Read text file and split it into lines using flatMap
+rdd1 = sc.textFile("file:/home/cloudera/filename.txt").flatMap(lambda line:line.split())
+#Method 1 : Filter out words starting with a letter 'H' using startswith()
+Hwords = rdd1.filter(lambda word:word.startswith('H')).collect()
+
+
+#Method 2 : Initial mapping (word, 1) and then combining same word (i.e. updating it's count)
+allwords = rdd1.map(lambda word:(word,1)).reduceByKey(lambda v1,v2:(v1+v2)).collect()
+
+
+(u'Hello', 2) , (u'World', 1) 
+
+
+
+
+Character Count
+from pyspark import SparkConf,SparkContext
+sc
+tokens = sc.textFile("file:/home/cloudera/textfile.txt")
+counts=tokens.flatMap(lambda x:[(c,1) for c in x]).reduceByKey(lambda v1,v2:v1+v2)
+counts.collect()
+
+
+
+
+
+
+
+
+3.Average of temp
+Input file:-temp.txt
+Mumbai 10
+Bangalore 20
+Mumbai 30
+Pune 30
+Pune 30
+ 
+PROGRAM (done in terminal line by line execution)
+>>> from pyspark import SparkConf,SparkContext
+>>> sc
+<pyspark.context.SparkContext object at 0x1b4ac50>
+>>> rdd1=sc.textFile("file:/home/cloudera/Desktop/temp.txt")
+>>> rdd1.collect()
+[u'Mumbai 10', u'Bangalore 20', u'Mumbai 30', u'Pune 30', u'Pune 30']
+
+
+>>> rdd2=rdd1.map(lambda word : (word.split()[0],(int(word.split()[1]),1))
+... )
+>>> rdd2.collect()
+[(u'Mumbai', (10, 1)), (u'Bangalore', (20, 1)), (u'Mumbai', (30, 1)), (u'Pune', (30, 1)), (u'Pune', (30, 1))]
+
+
+>>> rdd3=rdd2.reduceByKey(lambda v1,v2: ((v1[0]+v2[0]),(v1[1]+v2[1])))
+>>> rdd3.collect()
+[(u'Bangalore', (20, 1)), (u'Pune', (60, 2)), (u'Mumbai', (40, 2))]
+
+
+>>> rdd4=rdd3.map(lambda word : (word[0],word[1][0]/word[1][1]))
+>>> rdd4.collect()
+[(u'Bangalore', 20), (u'Pune', 30), (u'Mumbai', 20)]
+
+
+5.Joins:
+
+
+users=sc.parallelize([(0,"Alex"),(1,"Bert"),(2,"Curt"),(3,"Don")])
+>>> hobbies=sc.parallelize([(0,"writing"),(0,"gym"),(1,"swimming")])
+>>> users.join(hobbies).collect()
+[(0, ('Alex', 'writing')), (0, ('Alex', 'gym')), (1, ('Bert', 'swimming'))]         
+>>> users.leftOuterJoin(hobbies).collect()
+[(0, ('Alex', 'writing')), (0, ('Alex', 'gym')), (2, ('Curt', None)), (1, ('Bert', 'swimming')), (3, ('Don', None))]
+>>> users.join(hobbies).map(lambda x:x[1][0]+" likes "+x[1][1]).collect()
+['Alex likes writing', 'Alex likes gym', 'Bert likes swimming']
+
+
+
+
+6.Two lettered words
+PROGRAM
+from pyspark import SparkConf,SparkContext
+sc
+#Read text file and split it into lines using flatMap
+rdd1 = sc.textFile("file:/home/training/Desktop/pysparks/words.txt").flatMap(lambda line:line.split())
+#Filter out 2 lettered words
+rdd2 = rdd1.filter(lambda word:len(word)==2)
+#Map each 2 letterd word initially as having count as 1 => (key,value) = (word, it's count)
+rdd3 = rdd2.map(lambda word:(word,1))
+#update count of a word(key) for multiple occurence of a word
+rdd4 = rdd3.reduceByKey(lambda v1,v2:(v1+v2))
+#collect is for printing the output on terminal but this is a .py file so we write print statement for it.
+print rdd4.collect()
+
+
+OUTPUT:
+[(u'is', 1), (u'Hi', 2), (u'My', 1)]
+
+
+7.Searching a word
+PROGRAM
+from pyspark import SparkConf,SparkContext
+sc
+#Read input
+rdd1=sc.textFile("file:/home/training/Desktop/pysparks/words.txt")
+searchTerm = 'USA'
+rdd2 = rdd1.filter(lambda line : (searchTerm in line)).collect()
+print rdd2
+
+
+OUTPUT
+[u'Colorado USA', u'Indiana USA']
+
+
+
+
+9.Average of ratings
+
+
+Input file:-ratings.txt
+paneer 5
+paneer 4
+mangolian 3
+manchurian 2
+mangaolian 2
+manchurian 2
+PROGRAM (done in terminal line by line execution)
+
+
+from pyspark import SparkConf,SparkContext
+>>> sc
+<pyspark.context.SparkContext object at 0x1b4ac50>
+>>> rdd1=sc.textFile("file:/home/cloudera/Desktop/ratings.txt")
+>>> rdd1.collect()
+[u'paneer 5', u'paneer 4', u'mangolian 3', u'manchurian 2', u'mangaolian 2', u'manchurian 2']
+>>> rdd2=rdd1.map(lambda word : (word.split()[0],(int(word.split()[1]),1))
+>>> rdd3=rdd2.reduceByKey(lambda v1,v2: ((v1[0]+v2[0]),(v1[1]+v2[1])))
+>>> rdd4=rdd3.map(lambda word : (word[0],word[1][0]/word[1][1]))
+>>> rdd4.collect()
+[(u'mangaolian', 2), (u'paneer', 4), (u'manchurian', 2), (u'mangolian', 3)]
+
+
+Union of 2 files
+PROGRAM
+from pyspark import SparkConf,SparkContext
+sc
+#Read text file and map lines
+rdd1=sc.textFile("file:/home/training/Desktop/pysparks/words.txt").map(lambda line:(line,line))
+rdd2=sc.textFile("file:/home/training/Desktop/pysparks/words1.txt").map(lambda line:(line,line))
+#Union has single occurrence of repeated terms 
+rdd3 = (rdd1 + rdd2).reduceByKey(lambda v1,v2:(v1)).collect()
+for i in range(len(rdd3)):
+  print rdd3[i][0]
+
+
+OUTPUT
+and
+is
+Indiana USA
+Colorado USA
+all?
+you
+My
+Illinois USA
+Hi again
+name
+Goa USA
+How
+Hi
+Mohit.
+Hello
+are
+
+
+MAX AND MIN 
+INPUT - numbers.txt
+7
+23
+77
+2
+32
+45
+64
+PROGRAM (normal text file)
+from pyspark import SparkConf, SparkContext
+sc
+numbers = sc.textFile("file:/home/training/Desktop/pysparks/numbers.txt")
+rdd1 = numbers.map(lambda line: ("numbers", float(line)))
+maxnumber = rdd1.reduceByKey(lambda v1,v2 : (max([v1,v2]))).collect()
+minnumber = rdd1.reduceByKey(lambda v1,v2 : (min([v1,v2]))).collect()
+# maxnumber = ((“numbers”,actual number))
+print 'Max is ', maxnumber[0][1], 'and Min is ', minnumber[0][1]
+
+
+OUTPUT
+Max is  77.0 and Min is  2.0
+
+
+PROGRAM (CSV file)
+from pyspark import SparkContext
+sc
+rdd1 = sc.textFile("file:/home/cloudera/Desktop/FileName.csv")
+header = rdd1.first()
+header = sc.parallelize([header])
+rdd2 = rdd1.subtract(header)
+rdd2.collect()
+rdd3 = rdd2.map(lambda l: ("ColumnName_in_csv", (float(l.split(",")[6]), 1)))
+#6 is the column number in the above line. Change accordingly.
+rdd3.collect()
+maxnumber = rdd3.reduceByKey(lambda v1,v2 : (max([v1,v2]))).collect()
+minnumber = rdd3.reduceByKey(lambda v1,v2 : (min([v1,v2]))).collect()
+print 'Max is ', maxnumber[0][1], 'and Min is ', minnumber[0][1]
+
+
+
+
+
+
+Kmeans clustering
+For installing numpy -->
+pip install --user numpy==1.4.1 (ye karne ka)
+sudo chown -R $USER (path) (ye jab agr permission denied aaye last mein)
+PROGRAM
+from pyspark.mllib.clustering import KMeans
+from numpy import array
+from math import sqrt
+from pyspark import SparkConf,SparkContext
+sc = SparkContext(master = "local[*]")
+
+
+#Read input (for admission dataset)
+data = sc.textFile("file:/home/training/Desktop/pysparks/Admission_Predict.csv")
+
+
+header = data.first()
+header = sc.parallelize([header])
+data = data.subtract(header)
+parsedData = data.map(lambda line: array([float(x) for x in line.split(',')]))
+
+
+#Read input (for seed dataset)(Note: remove any empty lines at the end of file)
+data = sc.textFile("file:/home/training/Desktop/pysparks/seed-data.txt")
+parsedData = data.map(lambda line: array([float(x) for x in line.split()]))
+
+
+# Build the model (cluster the data)
+clusters = KMeans.train(parsedData, 3, maxIterations=10, runs=10, initializationMode="random")
+
+
+# Evaluate clustering by computing Within Set Sum of Squared Errors
+def error(point):
+    center = clusters.centers[clusters.predict(point)]
+    return sqrt(sum([x**2 for x in (point - center)]))
+
+
+WSSSE = parsedData.map(lambda point: error(point)).reduce(lambda x, y: x + y)
+print("Within Set Sum of Squared Error = " + str(WSSSE))
+center = clusters.centers
+for i in center:
+        for j in i:
+                print j,
+        print
+
+
+
+
+
+
+OUTPUT
+For Admission_Predict.csv
+Within Set Sum of Squared Error = 2194.83778503
+300.37804878 100.573170732 2.15853658537 2.57926829268 2.73780487805 7.95048780488 0.170731707317 0.565609756098 
+
+
+314.170731707 105.402439024 2.67682926829 3.16158536585 3.29573170732 8.41615853659 0.414634146341 0.688536585366 
+
+
+328.363636364 113.188311688 4.01948051948 4.09090909091 4.0 9.13883116883 0.88961038961 0.847012987013 
+
+
+For seed-data.txt
+Within Set Sum of Squared Error = 322.384813924
+18.7218032787 16.2973770492 0.885086885246 6.20893442623 3.72267213115 3.60359016393 6.06609836066 1.98360655738
+11.9090666667 13.2502666667 0.851549333333 5.22233333333 2.86509333333 4.72218666667 5.09304 2.86666666667
+
+
+14.632027027 14.4532432432 0.879097297297 5.56178378378 3.27489189189 2.74404324324 5.18493243243 1.13513513514
+
+
+PageRank:
+from pyspark import SparkConf,SparkContext
+sc = SparkContext(master="local[*]")
+def computeContribs(neighbors, rank):
+        for neighbor in neighbors:
+                yield(neighbor, rank/len(neighbor))
+links = sc.textFile("file:/home/training/Desktop/pysparks/pr.txt")\
+        .map(lambda line:line.split())\
+        .map(lambda page:(page[0],page[1]))\
+        .distinct()\
+        .groupByKey()\
+        .persist() 
+ranks=links.map(lambda (page,neighbor): (page,1.0)) 
+n = 10
+for x in xrange (n):
+        print "Iteration", x
+        contribs = links.join(ranks)\
+        .flatMap(lambda (page,(neighbor,rank)):computeContribs(neighbor,rank))
+        ranks = contribs.reduceByKey(lambda v1,v2:v1+v2)\
+        .map(lambda (page,contrib):(page,contrib*0.85 + 0.15))
+        for pair in ranks.take(10):
+                print pair
+
+
+Output:
+Iteration 9 (This comes for every iteration from 0 to 9)
+(u'page3', 0.19154438357730952)
+(u'page1', 0.24437521909596335)
+(u'page4', 0.18256294276213977)
+(u'page2', 0.18103598129911347)
+
+
+
+
+
+
+
+
+HIVE
+
+
+Question 2 (Organization) solution
+Execution : 
+hive> desc employee;
+OK
+ename                       string                                          
+street                      string                                          
+city                        string                                          
+Time taken: 0.743 seconds, Fetched: 3 row(s)
+hive> desc work;
+OK
+ename                       string                                          
+cname                       string                                          
+salary                      int                                             
+Time taken: 0.066 seconds, Fetched: 3 row(s)
+hive> desc company;
+OK
+cname                       string                                          
+city                        string                                          
+Time taken: 0.124 seconds, Fetched: 2 row(s)
+hive> desc manages;
+OK
+ename                       string                                          
+mname                       string                                          
+Time taken: 0.103 seconds, Fetched: 2 row(s)
+
+
+hive> select * from employee;
+OK
+Resham        Cblock        UNR
+Disha        BusStop        Klyn
+Vanita        panchno        Pune
+Roma        chopra        Hyderabad
+Richa        PunjabiColony        Bangalore
+Manoj        Yogidham        Mumbai
+Infosys        Mulund        Pune
+Jay        Mulund        Pune
+Mitesh        KK        Pune
+Kajol        LL        Pune
+Bhavesh        MM        Bangalore
+Sladyn        NN        Hyder
+Karan        FF        UNR
+Time taken: 0.106 seconds, Fetched: 13 row(s)
+
+
+hive> select * from work;
+OK
+Resham        Infosys        500000
+Disha        JPMC        1400000
+Vanita        Quantiphi        800000
+Roma        Accenture        600000
+Richa        DolatCapital        500000
+Manoj        JPMC        1400000
+Jay        Infosys        500000
+Mitesh        JPMC        1400000
+Kajol        JPMC        1400000
+Bhavesh        JPMC        1400000
+Sladyn        JPMC        1400000
+Karan        JPMC        1400000
+Time taken: 0.189 seconds, Fetched: 12 row(s)
+
+
+hive> select * from company;
+OK
+Infosys        Pune
+JPMC        Mumbai
+Quantiphi        Mumbai
+Accenture        Mumbai
+DolatCapital        Mumbai
+Time taken: 0.066 seconds, Fetched: 5 row(s)
+
+
+hive> select * from manages;
+OK
+Resham        Richa
+Disha        Roma
+Vanita        Roma
+Time taken: 0.074 seconds, Fetched: 3 row(s)
+
+
+Query 1:
+hive> select w1.ename,w1.salary,w2.ename,w2.salary from work w1,manager,work w2  
+> where w1.ename=manager.ename and manager.mname=w2.ename and w1.salary>w2.salary;
+OUTPUT:
+OK
+Disha        1400000        Roma        600000
+Vanita        800000        Roma        600000
+Time taken: 118.529 seconds, Fetched: 2 row(s)
+
+
+Query 2:
+hive> select cname,count(*) maxe from work group by cname order by maxe desc limit 1; 
+OUTPUT:
+
+
+OK
+JPMC        7
+Time taken: 157.309 seconds, Fetched: 1 row(s)
+
+
+Query 3:
+ hive > select cname,count(ename)as TotalEmp from work group by(cname)having count(ename)>5;
+OUTPUT:
+OK
+JPMC        7
+Time taken: 109.426 seconds, Fetched: 1 row(s)
+
+
+
+
+Query 4:
+hive> select e.ename from employee as e,work as w,company as c where e.ename=w.ename and c.cname=w.cname and e.city=c.city;
+Output:
+OK
+Manoj
+Jay
+Time taken: 85.034 seconds, Fetched: 2 row(s)
+
+
+
+
+
+
+
+
+
+
+HBASE
+Create: create 'table_name', 'column_family'
+Insert: put 'table_name', 'ROW_KEY', 'column_family:column_name','value'
+Display: scan 'table_name'
+get 'table_name', 'ROW_KEY'
+Delete: delete 'table_name', 'ROW_KEY', 'column_family:column_name'
+Drop: disable 'table_name'
+drop 'table_name'
+
+
+
+
+Sqoop
+mysql -u root -p
+Password:cloudera
+To show dbs: mysql> show databases;
+Create db : create database dbname;
+To use db: use dbname;
+Create table: create table team(tid int,name varchar(20));
+See schema: describe tableName;
+Insert: insert into tableName values(1,"ironman"),(2,"thor"),(3,"antman");
+Select: select * from tableName;
+Add primary key: alter table tableName add primary key(tid);
+
+
+To see tables: sqoop list-tables --connect jdbc:mysql://localhost/dbname --username root --password cloudera
+Import table: sqoop import --table tableName --connect jdbc:mysql://localhost/dbname --username root --password cloudera
+
+
+Sqoop export: Create empty table in mysql
+Sqoop export --connect jdbc:mysql://localhost/dbname –username root --table emptytablename –export-dir /user/root/employees
